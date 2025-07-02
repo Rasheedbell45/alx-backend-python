@@ -21,16 +21,15 @@ def stream_users_in_batches(batch_size):
 
     cursor.close()
     db.close()
-
-
+                
 def batch_processing(batch_size):
-    """
-    Generator that processes batches and yields users over the age of 25
-    """
     for batch in stream_users_in_batches(batch_size):
         for user in batch:
-            if user[2] > 25:  # assuming the 3rd column is age
-                yield user
+            if user[2] > 25:
+                yield user or
 
+        if user[2] > 25:
+                results.append(user)
+    return results
           for user in batch_processing(10):
     print(user)
