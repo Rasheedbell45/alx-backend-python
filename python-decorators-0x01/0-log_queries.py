@@ -1,26 +1,23 @@
+from datetime import datetime
+
+def connect():
+    # Simulate connecting to a database
+    print("[DB] Connected to database.")
+
 def log_queries():
     def decorator(func):
         def wrapper(*args, **kwargs):
-            # Log the SQL query (assuming first argument is the query string)
+            connect()
             if args:
-                print(f"[LOG] Executing SQL Query: {args[0]}")
+                print(f"[{datetime.now()}] Executing SQL Query: {args[0]}")
             else:
-                print(f"[LOG] Executing SQL Query: <no query provided>")
-            # Call the original function
+                print(f"[{datetime.now()}] Executing SQL Query: <no query provided>")
             return func(*args, **kwargs)
         return wrapper
     return decorator
 
 @log_queries()
-def execute_query(query, params=None):
-    # Simulated execution
-    print(f"Running query: {query}")
-    if params:
-        print(f"With params: {params}")
-    return "Query result"
+def run_query(query):
+    print(f"Running: {query}")
 
-result = execute_query("SELECT * FROM users WHERE age > %s", [25])
-
-[LOG] Executing SQL Query: SELECT * FROM users WHERE age > %s
-Running query: SELECT * FROM users WHERE age > %s
-With params: [25]
+run_query("SELECT * FROM users WHERE active = 1")
