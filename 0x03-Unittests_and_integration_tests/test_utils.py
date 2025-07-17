@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+"""
+Unit tests for utility functions in utils.py.
+
+Includes tests for:
+- access_nested_map
+- get_json
+- memoize
+"""
 
 import unittest
 from unittest.mock import patch, Mock
@@ -15,6 +23,7 @@ class TestAccessNestedMap(unittest.TestCase):
         ({"a": {"b": 2}}, ("a", "b"), 2),
     ])
     def test_access_nested_map(self, nested_map, path, expected):
+        """Test correct output for valid paths in nested map."""
         self.assertEqual(access_nested_map(nested_map, path), expected)
 
     @parameterized.expand([
@@ -22,6 +31,7 @@ class TestAccessNestedMap(unittest.TestCase):
         ({"a": 1}, ("a", "b"), 'b'),
     ])
     def test_access_nested_map_exception(self, nested_map, path, missing_key):
+        """Test KeyError is raised for invalid paths in nested map."""
         with self.assertRaises(KeyError) as cm:
             access_nested_map(nested_map, path)
         self.assertEqual(str(cm.exception), f"'{missing_key}'")
@@ -35,6 +45,7 @@ class TestGetJson(unittest.TestCase):
         ("http://holberton.io", {"payload": False}),
     ])
     def test_get_json(self, test_url, test_payload):
+        """Test get_json returns expected payload from mocked URL."""
         mock_response = Mock()
         mock_response.json.return_value = test_payload
 
@@ -48,6 +59,8 @@ class TestMemoize(unittest.TestCase):
     """Tests for memoize decorator."""
 
     def test_memoize(self):
+        """Test that memoize caches the result and avoids repeated calls."""
+
         class TestClass:
             def a_method(self):
                 return 42
