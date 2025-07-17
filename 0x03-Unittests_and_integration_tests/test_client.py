@@ -5,8 +5,11 @@ import unittest
 from unittest.mock import patch, PropertyMock
 from parameterized import parameterized
 from client import GithubOrgClient
+from utils import some_function
+from parameterized import parameterized_class
+from unittest.mock import patch, Mock
+from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
 import utils
-
 
 class TestGithubOrgClient(unittest.TestCase):
     """Test class for GithubOrgClient"""
@@ -14,6 +17,11 @@ class TestGithubOrgClient(unittest.TestCase):
     @parameterized.expand([
         ("google",),
         ("abc",)
+         ({"license": {"key": "my_license"}}, "my_license", True),
+        ({"license": {"key": "other_license"}}, "my_license", False),
+        ({}, "my_license", False),
+        ({"license": {}}, "my_license", False),
+        ({"license": {"key": None}}, "my_license", False)
     ])
     @patch('client.get_json')
     def test_org(self, org_name, mock_get_json):
@@ -38,6 +46,8 @@ class TestGithubOrgClient(unittest.TestCase):
         test_repos = [{"name": "repo1"}, {"name": "repo2"}]
         mock_get_json.return_value = test_repos
 
+        @patch('client.GithubOrgClient.public_repos', ...)
+
         with patch('client.GithubOrgClient._public_repos_url',
                    new_callable=PropertyMock) as mock_url:
             mock_url.return_value = "https://api.github.com/orgs/test/repos"
@@ -53,18 +63,9 @@ class TestGithubOrgClient(unittest.TestCase):
 if __name__ == '__main__':
     unittest.main()
 
-from parameterized import parameterized
-
 class TestGithubOrgClient(unittest.TestCase):
     ...
-
-    @parameterized.expand([
-        ({"license": {"key": "my_license"}}, "my_license", True),
-        ({"license": {"key": "other_license"}}, "my_license", False),
-        ({}, "my_license", False),
-        ({"license": {}}, "my_license", False),
-        ({"license": {"key": None}}, "my_license", False)
-    ])
+    
     def test_has_license(self, repo, license_key, expected):
         """Test has_license method"""
         result = GithubOrgClient.has_license(repo, license_key)
@@ -92,14 +93,6 @@ repos_payload = [
 
 expected_repos = ["repo1", "repo2", "repo3"]
 apache2_repos = ["repo1", "repo3"]
-
-#!/usr/bin/env python3
-import unittest
-from unittest.mock import patch, Mock
-from parameterized import parameterized_class
-from client import GithubOrgClient
-from fixtures import org_payload, repos_payload, expected_repos, apache2_repos
-
 
 @parameterized_class([
     {
