@@ -4,6 +4,7 @@ import unittest
 from parameterized import parameterized
 from utils import access_nested_map
 
+
 class TestAccessNestedMap(unittest.TestCase):
     """Unit tests for access_nested_map."""
 
@@ -15,8 +16,11 @@ class TestAccessNestedMap(unittest.TestCase):
     def test_access_nested_map(self, nested_map, path, expected):
         self.assertEqual(access_nested_map(nested_map, path), expected)
 
-def access_nested_map(nested_map, path):
-    """Access a value in a nested map by following the sequence of keys in the path."""
-    for key in path:
-        nested_map = nested_map[key]
-    return nested_map
+    @parameterized.expand([
+        ({}, ("a",), "a"),
+        ({"a": 1}, ("a", "b"), "b"),
+    ])
+    def test_access_nested_map_exception(self, nested_map, path, missing_key):
+        with self.assertRaises(KeyError) as context:
+            access_nested_map(nested_map, path)
+        self.assertEqual(str(context.exception), f"'{missing_key}'")
