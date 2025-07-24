@@ -53,9 +53,10 @@ class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     queryset = Message.objects.all()
     permission_classes = [IsAuthenticated]
-    filter_backends = [filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     ordering_fields = ['sent_at']
-
+    filterset_class = MessageFilter
+    
     def get_queryset(self):
         return Message.objects.filter(conversation__participants=self.request.user)
 
