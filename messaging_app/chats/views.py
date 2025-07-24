@@ -1,23 +1,22 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.status import HTTP_403_FORBIDDEN
 from django.shortcuts import get_object_or_404
 
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
-from .permissions import IsAuthenticatedParticipant
 
 
 class ConversationViewSet(viewsets.ModelViewSet):
+    queryset = Conversation.objects.all()
     serializer_class = ConversationSerializer
     permission_classes = [IsAuthenticated]
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['created_at']
 
     def get_queryset(self):
-        # Restrict to conversations where the user is a participant
         return Conversation.objects.filter(participants=self.request.user)
 
     def create(self, request, *args, **kwargs):
@@ -33,11 +32,16 @@ class ConversationViewSet(viewsets.ModelViewSet):
         conversation = serializer.save()
         return Response(self.get_serializer(conversation).data, status=status.HTTP_201_CREATED)
 
-    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['get'])
     def messages(self, request, pk=None):
         conversation = self.get_object()
-        if request.user not in conversation.participants.all():
-            raise PermissionDenied("You are not a participant in this conversation.")
+
+        if not conversation.participants.filter(id=request.user.id).exists():
+            return Response(
+                {"error": "You are not authorized to view these messages."},
+                status=HTTP_403_FORBIDDEN
+            )
+
         messages = conversation.messages.all().order_by('-sent_at')
         serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data)
@@ -45,21 +49,52 @@ class ConversationViewSet(viewsets.ModelViewSet):
 
 class MessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
-    permission_classes = [IsAuthenticated, IsAuthenticatedParticipant]
+    queryset = Message.objects.all()
+    permission_classes = [IsAuthenticated]
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['sent_at']
 
     def get_queryset(self):
-        user = self.request.user
-        # Only messages where user is sender or receiver
-        return Message.objects.filter(sender=user) | Message.objects.filter(receiver=user)
+        return Message.objects.filter(conversation__participants=self.request.user)
 
-    def perform_create(self, serializer):
-        sender = self.request.user
-        conversation = serializer.validated_data.get('conversation')
+    def create(self, request, *args, **kwargs):
+        conversation_id = request.data.get('conversation')
+        sender_id = request.data.get('sender')
+        message_body = request.data.get('message_body')
 
-        # Validate if sender is part of the conversation
-        if not conversation.participants.filter(id=sender.id).exists():
-            raise PermissionDenied("You are not a participant in this conversation.")
+        if not all([conversation_id, sender_id, message_body]):
+            return Response(
+                {"error": "conversation, sender, and message_body are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        serializer.save(sender=sender)
+        conversation = get_object_or_404(Conversation, id=conversation_id)
+
+        if not conversation.participants.filter(id=request.user.id).exists():
+            return Response(
+                {"error": "You are not authorized to send messages in this conversation."},
+                status=HTTP_403_FORBIDDEN
+            )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        message = serializer.save()
+        return Response(self.get_serializer(message).data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.sender != request.user:
+            return Response(
+                {"error": "You can only update your own messages."},
+                status=HTTP_403_FORBIDDEN
+            )
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.sender != request.user:
+            return Response(
+                {"error": "You can only delete your own messages."},
+                status=HTTP_403_FORBIDDEN
+            )
+        return super().destroy(request, *args, **kwargs)
