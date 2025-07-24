@@ -8,6 +8,8 @@ from django.shortcuts import get_object_or_404
 from .models import Conversation, Message
 from .serializers import ConversationSerializer, MessageSerializer
 
+from django_filters.rest_framework import DjangoFilterBackend
+from .filters import MessageFilter
 
 class ConversationViewSet(viewsets.ModelViewSet):
     queryset = Conversation.objects.all()
