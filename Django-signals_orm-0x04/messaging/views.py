@@ -4,6 +4,8 @@ from django.contrib import messages
 from django.db.models import Prefetch
 from .models import Message
 from django.shortcuts import render
+from django.views.decorators.cache import cache_page
+from django.utils.decorators import method_decorator
 
 def get_all_replies(message):
     replies = message.replies.all().select_related('sender')
@@ -63,3 +65,14 @@ def unread_inbox_view(request):
     return render(request, 'messaging/threaded_conversation.html', {
         "conversations": conversation_data
     })
+
+@cache_page(60)  # Cache timeout of 60 seconds
+def conversation_messages(request, conversation_id):
+    messages = Message.objects.filter(parent_message__isnull=True).select_related('sender', 'receiver')
+    return render(request, 'messaging/conversation.html', {'messages': messages})
+
+@method_decorator(cache_page(60), name='dispatch')
+class ConversationView(View):
+    def get(self, request, *args, **kwargs):
+        messages = Message.objects.filter(parent_message__isnull=True)
+        return render(request, 'messaging/conversation.html', {'messages': messages})
