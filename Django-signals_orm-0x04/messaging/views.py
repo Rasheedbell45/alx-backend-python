@@ -27,7 +27,15 @@ def threaded_conversation_view(request):
         "messages": messages,
         "threaded_messages": threaded_messages
     })
-   
+
+    def inbox_unread_view(request):
+    # Explicit use of the custom manager
+    unread_messages = Message.unread.for_user(request.user)
+
+    return render(request, 'messaging/unread_inbox.html', {
+        'unread_messages': unread_messages
+    })
+    
     top_level_messages = (
         Message.objects
         .filter(receiver=user, parent_message__isnull=True)
