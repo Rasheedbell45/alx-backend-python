@@ -1,7 +1,10 @@
-from django.shortcuts import render, get_object_or_404
-from .models import Message
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect
+from django.contrib import messages
 
-def message_detail(request, message_id):
-    message = get_object_or_404(Message, id=message_id)
-    history = message.history.all().order_by('-edited_at')
-    return render(request, 'messaging/message_detail.html', {'message': message, 'history': history})
+@login_required
+def delete_user(request):
+    user = request.user
+    user.delete()
+    messages.success(request, "Your account has been successfully deleted.")
+    return redirect('home')
