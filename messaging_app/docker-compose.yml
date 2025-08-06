@@ -9,6 +9,7 @@ services:
       MYSQL_DATABASE: messaging_db
       MYSQL_PASSWORD: your_password
       MYSQL_ROOT_PASSWORD: your_root_password
+      MYSQL_DB: messaging_db
     ports:
       - "3306:3306"
     volumes:
@@ -28,6 +29,7 @@ services:
       MYSQL_DATABASE: messaging_db
       MYSQL_PASSWORD: your_password
       MYSQL_ROOT_PASSWORD: your_root_password
-
+      MYSQL_DB: messaging_db
+      
 volumes:
   db_data:
