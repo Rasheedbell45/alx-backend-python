@@ -1,0 +1,33 @@
+#!/bin/bash
+# kubctl-0x03 - Rolling update for Django app without downtime
+
+set -e
+
+DEPLOYMENT="django-messaging-blue"
+SERVICE="django-messaging-service"
+NAMESPACE="default"
+
+echo "Applying updated deployment..."
+kubectl apply -f blue_deployment.yaml --namespace=$NAMESPACE
+
+echo "Monitoring rollout status..."
+kubectl rollout status deployment/$DEPLOYMENT --namespace=$NAMESPACE
+
+echo "Getting Service endpoint..."
+CLUSTER_IP=$(kubectl get svc $SERVICE --namespace=$NAMESPACE -o jsonpath='{.spec.clusterIP}')
+PORT=$(kubectl get svc $SERVICE --namespace=$NAMESPACE -o jsonpath='{.spec.ports[0].port}')
+
+echo "Testing for downtime (sending requests every 1s)..."
+for i in {1..15}; do
+    if curl -s --max-time 2 http://$CLUSTER_IP:$PORT/ > /dev/null; then
+        echo "Request $i: App responded"
+    else
+        echo "Request $i: Possible downtime!"
+    fi
+    sleep 1
+done
+
+echo "Checking current pods after rollout..."
+kubectl get pods --namespace=$NAMESPACE -o wide
+
+echo "Rolling update completed successfully!"
