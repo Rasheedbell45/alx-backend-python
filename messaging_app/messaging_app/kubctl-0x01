@@ -1,0 +1,31 @@
+#!/bin/bash
+# kubctl-0x01 - Scale Django app, verify pods, load test, and monitor resources
+
+set -e  # Exit if a command fails
+
+DEPLOYMENT_NAME="django-messaging-deployment"
+SERVICE_NAME="django-messaging-service"
+NAMESPACE="default"
+
+echo "Scaling $DEPLOYMENT_NAME to 3 replicas..."
+kubectl scale deployment "$DEPLOYMENT_NAME" --replicas=3 --namespace="$NAMESPACE"
+
+echo "Scaled successfully. Waiting for pods to start..."
+sleep 5
+
+echo "Checking running pods..."
+kubectl get pods --namespace="$NAMESPACE" -o wide
+
+echo "Getting ClusterIP of $SERVICE_NAME..."
+CLUSTER_IP=$(kubectl get svc "$SERVICE_NAME" --namespace="$NAMESPACE" -o jsonpath='{.spec.clusterIP}')
+PORT=$(kubectl get svc "$SERVICE_NAME" --namespace="$NAMESPACE" -o jsonpath='{.spec.ports[0].port}')
+
+echo "Service endpoint: http://$CLUSTER_IP:$PORT"
+
+echo "Running load test with wrk (10s, 100 connections, 200 threads)..."
+wrk -t200 -c100 -d10s http://$CLUSTER_IP:$PORT/
+
+echo "Monitoring resource usage..."
+kubectl top pods --namespace="$NAMESPACE"
+
+echo "Done!"
