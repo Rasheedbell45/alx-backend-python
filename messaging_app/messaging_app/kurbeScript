@@ -1,0 +1,26 @@
+#!/bin/bash
+# kurbeScript - Start and check Kubernetes locally with Minikube
+
+# Exit immediately if a command exits with a non-zero status
+set -e
+
+echo "Starting local Kubernetes cluster using Minikube..."
+
+# Start Minikube (adjust driver if needed: docker, virtualbox, etc.)
+minikube start --driver=docker
+
+echo "Minikube started successfully."
+
+# Verify that the cluster is running
+echo "Checking Kubernetes cluster status..."
+kubectl cluster-info
+
+# Check if the cluster is healthy
+echo "Verifying nodes..."
+kubectl get nodes -o wide
+
+# Retrieve available pods across all namespaces
+echo "Retrieving available pods (across all namespaces)..."
+kubectl get pods --all-namespaces
+
+echo "Done! Kubernetes cluster is running locally."
