@@ -2,14 +2,12 @@ pipeline {
     agent any
 
     environment {
-        // Define Python virtual environment path
         VENV = ".venv"
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                // Use Jenkins credentials for GitHub
                 git branch: 'main',
                     url: 'https://github.com/your-username/messaging-app.git',
                     credentialsId: 'github-credentials-id'
@@ -21,8 +19,8 @@ pipeline {
                 sh '''
                     python3 -m venv $VENV
                     source $VENV/bin/activate
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+                    pip3 install --upgrade pip
+                    pip3 install -r messaging_app/requirements.txt
                 '''
             }
         }
@@ -31,14 +29,13 @@ pipeline {
             steps {
                 sh '''
                     source $VENV/bin/activate
-                    pytest --maxfail=1 --disable-warnings -q --junitxml=test-results.xml
+                    pytest messaging_app/tests --maxfail=1 --disable-warnings -q --junitxml=test-results.xml
                 '''
             }
         }
 
         stage('Publish Test Report') {
             steps {
-                // Jenkins JUnit plugin will publish results
                 junit 'test-results.xml'
             }
         }
@@ -53,7 +50,7 @@ pipeline {
             echo 'Build failed. Check logs and test reports.'
         }
         success {
-            echo 'Build succeeded! Tests passed.'
+            echo 'Build succeeded! All tests passed.'
         }
     }
 }
